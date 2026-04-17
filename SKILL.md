@@ -1,7 +1,7 @@
 ---
 name: neverland-farm
 displayName: Neverland农场自动化助手
-version: 1.5.0
+version: 1.5.1
 description: 智能打理Neverland农场，自动收集、收获、出售、进入下一天
 author: BI4IVE
 tags:

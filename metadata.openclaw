@@ -2,7 +2,7 @@
 # Neverland农场自动化技能元数据
 
 name: neverland-farm
-version: 1.5.0
+version: 1.5.1
 
 # 运行环境
 primaryEnv: python
