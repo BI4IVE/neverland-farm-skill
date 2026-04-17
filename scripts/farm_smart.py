@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Neverland农场自动化助手 v1.5
+Neverland农场自动化助手 v1.5.2
 ClawHub版本 - 使用环境变量配置
 
 环境变量:
@@ -13,7 +13,7 @@ import time
 import sys
 import os
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 try:
     import requests
@@ -69,20 +69,38 @@ class NeverlandAPIClient:
             if e.response.status_code == 429:
                 raise RateLimitError("频率限制", "30分钟后重试")
             raise
+        except requests.exceptions.RequestException as e:
+            print(f"⚠️ 请求失败: {e}")
+            raise
     
     def get_status(self) -> Dict:
+        """获取农场状态"""
         return self._request("GET", f"/farm/{self.farm_id}/status")
     
     def collect_products(self) -> Dict:
+        """收集动物产品"""
         return self._request("POST", f"/farm/{self.farm_id}/collect")
     
+    def get_crops(self) -> Dict:
+        """获取作物信息（从状态中提取）"""
+        status = self.get_status()
+        return {"plots": status.get("data", {}).get("plots", [])}
+    
+    def get_backpack(self) -> Dict:
+        """获取背包信息（从状态中提取）"""
+        status = self.get_status()
+        return {"items": status.get("data", {}).get("inventory", [])}
+    
     def harvest_crop(self, plot_id: int) -> Dict:
+        """收获作物"""
         return self._request("POST", f"/farm/{self.farm_id}/harvest/{plot_id}")
     
     def sell_item(self, item_id: str, quantity: int = 1) -> Dict:
+        """出售物品"""
         return self._request("POST", f"/farm/{self.farm_id}/sell", {"item_id": item_id, "quantity": quantity})
     
     def next_day(self) -> Dict:
+        """进入下一天"""
         return self._request("POST", f"/farm/{self.farm_id}/next-day")
 
 
@@ -98,9 +116,13 @@ class SmartFarmManager:
         print(f"\n🌾 Neverland农场自动化 - {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
         
         # 1. 状态
-        status = self.client.get_status()
-        data = status.get("data", status)
-        print(f"金币: {data.get('coins')} | 体力: {data.get('energy')}")
+        try:
+            status = self.client.get_status()
+            data = status.get("data", status)
+            print(f"金币: {data.get('coins')} | 体力: {data.get('energy')}")
+        except Exception as e:
+            print(f"⚠️ 获取状态失败: {e}")
+            return
         
         # 2. 收集
         if self.post_count < self.max_posts:
@@ -108,7 +130,8 @@ class SmartFarmManager:
                 self.client.collect_products()
                 self.post_count += 1
                 print("✅ 收集动物产品")
-            except: pass
+            except Exception as e:
+                print(f"⚠️ 收集失败: {e}")
         
         # 3. 收获
         if self.post_count < self.max_posts:
@@ -119,7 +142,8 @@ class SmartFarmManager:
                         self.client.harvest_crop(plot["id"])
                         self.post_count += 1
                         print(f"✅ 收获地块 {plot['id']}")
-            except: pass
+            except Exception as e:
+                print(f"⚠️ 收获失败: {e}")
         
         # 4. 出售
         if self.post_count < self.max_posts:
@@ -130,7 +154,8 @@ class SmartFarmManager:
                         self.client.sell_item(item["id"], item.get("quantity", 1))
                         self.post_count += 1
                         print(f"✅ 出售 {item['id']}")
-            except: pass
+            except Exception as e:
+                print(f"⚠️ 出售失败: {e}")
         
         # 5. 下一天
         if self.post_count < self.max_posts:
@@ -138,7 +163,8 @@ class SmartFarmManager:
                 self.client.next_day()
                 self.post_count += 1
                 print("✅ 进入下一天")
-            except: pass
+            except Exception as e:
+                print(f"⚠️ 进入下一天失败: {e}")
         
         print(f"\n完成，共 {self.post_count} 次操作")
 
