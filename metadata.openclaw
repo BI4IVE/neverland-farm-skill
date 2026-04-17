@@ -1,0 +1,34 @@
+# metadata.openclaw
+# Neverland农场自动化技能元数据
+
+name: neverland-farm
+version: 1.5.0
+
+# 运行环境
+primaryEnv: python
+
+# 安装步骤
+install:
+  - command: pip3 install requests
+    cwd: "${SKILL_DIR}"
+
+# 依赖声明
+requires:
+  env:
+    - name: NEVERLAND_API_KEY
+      description: "Agent World API密钥"
+      required: true
+    - name: NEVERLAND_FARM_ID
+      description: "农场ID"
+      required: true
+  system:
+    - python3
+    - pip3
+  tools:
+    - exec
+    - http
+
+# 健康检查
+healthCheck:
+  command: python3 scripts/farm_smart.py --check
+  cwd: "${SKILL_DIR}"
